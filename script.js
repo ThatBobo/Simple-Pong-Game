@@ -104,11 +104,27 @@ function update(dt){
     left.y = clamp(left.y, 0, H - paddle.height);
   }
 
-  // Simple AI for right paddle
+  // Predictive AI for right paddle with adjustable difficulty
+  // Difficulty 0.0 = easy (easier to beat), 1.0 = hard (challenging opponent)
+  const aiDifficulty = 0.6;
+  
+  // Predict where ball will be when it reaches paddle
+  const dx = right.x - ball.x;
+  const time = dx / ball.vx;
+  let predictedY = ball.y + ball.vy * time;
+  
   const rightCenter = right.y + paddle.height / 2;
-  const aiSpeed = 4.0 + Math.min(3, ball.speed / 3); // adapt to ball speed slightly
-  if(ball.y < rightCenter - 6) right.y -= aiSpeed * dt;
-  else if(ball.y > rightCenter + 6) right.y += aiSpeed * dt;
+  
+  // Speed: base speed scales with ball speed, modulated by difficulty
+  const baseAiSpeed = 4.0 + Math.min(3, ball.speed / 3);
+  const speedFactor = 0.5 + aiDifficulty * 0.5;
+  const aiSpeed = baseAiSpeed * speedFactor;
+  
+  // Error margin: larger on easy difficulty, smaller on hard
+  const errorMargin = 8 + (1 - aiDifficulty) * 12;
+  
+  if(predictedY < rightCenter - paddle.height / 2 - errorMargin) right.y -= aiSpeed * dt;
+  else if(predictedY > rightCenter + paddle.height / 2 + errorMargin) right.y += aiSpeed * dt;
   right.y = clamp(right.y, 0, H - paddle.height);
 
   // Ball movement
